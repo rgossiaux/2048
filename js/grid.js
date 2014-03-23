@@ -125,7 +125,7 @@ Grid.prototype.tileMatchesAvailable = function () {
 
       if (tile) {
         for (var direction = 0; direction < 4; direction++) {
-          var vector = self.getVector(direction);
+          var vector = this.getVector(direction);
           var cell   = { x: x + vector.x, y: y + vector.y };
 
           var other  = this.cellContent(cell);
@@ -250,5 +250,35 @@ Grid.prototype.move = function (direction) {
     });
   });
 	return { score: score, won: won, moved: moved };
+};
+
+Grid.prototype.searchScore = function () {
+	var result = 0;
+	for (var x = 0; x < this.size; ++x) {
+	  for (var y = 0; y < this.size; ++y) {
+		  if (!this.cellOccupied({x: x, y: y})) {
+				++result;
+			}
+		}
+	}
+	return result * 1000;
+};
+
+Grid.prototype.maxScore = function () {
+	return (this.size * this.size - 1) * 1000;
+};
+
+Grid.prototype.toString = function () {
+	var res = "";
+	for (var x = 0; x < this.size; ++x) {
+		for (var y = 0; y < this.size; ++y) {
+			if (this.cells[x][y]) {
+				res += this.cells[x][y].value + " ";
+			} else {
+				res += "x ";
+			}
+		}
+	}
+	return res;
 };
 

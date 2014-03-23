@@ -130,6 +130,7 @@ GameManager.prototype.moveTile = function (tile, cell) {
 
 // Move tiles on the grid in the specified direction
 GameManager.prototype.move = function (direction) {
+	direction = this.getAIMove();
   if (this.isGameTerminated()) return; // Don't do anything if the game's over
 
   // Save the current tile positions and remove merger information
@@ -175,5 +176,56 @@ GameManager.prototype.tileMatchesAvailable = function() {
 
 GameManager.prototype.positionsEqual = function (first, second) {
 	return this.grid.positionsEqual(first, second);
+};
+
+GameManager.prototype.getAIMove = function() {
+	var nodes = 0;
+	var search = function(depth, grid, table) {
+		if (!grid.movesAvailable()) {
+			++nodes;
+			return { score: -1, dir: 0 };
+		}
+		if (depth == 0) {
+			++nodes;
+			return { score: grid.searchScore(), dir: 0 };
+		}
+		var score = -1;
+		var best = 0;
+		for (var i = 0; i < 4; ++i) {
+			var g = new Grid(grid.size, grid.cells);
+			var res = g.move(i);
+			if (res.moved) {
+				if (g.toString() in table) {
+					value = table[g.toString()];
+				} else {
+					var avail = g.availableCells();
+					var value = 0;
+					var tmap = {};
+					var fmap = {};
+					for (var j = 0; j < avail.length; ++j) {
+						var tgrid = new Grid(g.size, g.cells);
+						var fgrid = new Grid(g.size, g.cells);
+						tgrid.insertTile(new Tile({x: avail[j].x, y: avail[j].y}, 2));
+						fgrid.insertTile(new Tile({x: avail[j].x, y: avail[j].y}, 4));
+						var tres = search(depth-1, tgrid, tmap);
+						var fres = search(depth-1, fgrid, fmap);
+					  value += 0.9 * tres.score + 0.1 * fres.score;
+					}
+					value /= avail.length;
+					value = Math.max(value, 0);
+					table[g.toString()] = value;
+					if (value > score) {
+						best = i;
+						score = value;
+					}
+				}
+			}
+		}
+		return { score: score, dir: best };
+	};
+
+	var res = search(3, this.grid, {} );
+	console.log("score: " + res.score + "   dir: " + res.dir + "   nodes: " + nodes);
+	return res.dir;
 };
 
